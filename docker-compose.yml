@@ -1,0 +1,54 @@
+version: "3.7"
+networks:
+  mongo_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.213.0/24
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: paleopinoy
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-volume:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+
+  backend:
+    build: ./backend
+    container_name: pp-backend
+    ports:
+      - 5000:5000
+    volumes:
+      - ./backend:/usr/src/app
+    command: /usr/src/app/docker-entrypoint.sh
+
+  frontend:
+    build: ./frontend
+    container_name: pp-frontend
+    ports:
+      - 3000:3000
+    volumes:
+      - ./frontend:/usr/src/app
+    command: /usr/src/app/docker-entrypoint.sh
+
+  mongoclient:
+    image: mongoclient/mongoclient:latest
+    container_name: mongoclient
+    hostname: mongoclient
+    depends_on:
+      - mongo
+    # networks:
+    #   - mongo_net
+    ports:
+      - 3300:3000
+
+volumes:
+  mongo-volume:
